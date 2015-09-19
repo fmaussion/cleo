@@ -628,13 +628,15 @@ class Map(DataLevels):
 
         # Geometries
         for g, kwargs in self._geometries:
-            if g.type is 'Polygon':
+            print(g, kwargs)
+            if g.type == 'Polygon':
                 kwargs.setdefault('facecolor', 'none')
                 plot_polygon(ax, g.buffer(0), **kwargs)
             if g.type in ['LineString', 'LinearRing']:
                 a = np.array(g)
+                kwargs.setdefault('color', 'k')
                 ax.plot(a[:, 0], a[:, 1], **kwargs)
-            if g.type is 'Point':
+            if g.type == 'Point':
                 kwargs.setdefault('marker', 'o')
                 kwargs.setdefault('s', 60)
                 kwargs.setdefault('c', 'w')

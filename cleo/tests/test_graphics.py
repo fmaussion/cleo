@@ -1,8 +1,6 @@
 from __future__ import division
 
 from nose.tools import assert_true
-import numpy as np
-import matplotlib.pyplot as plt
 
 import os
 import copy

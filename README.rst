@@ -12,8 +12,8 @@ Cleo
   :target: https://coveralls.io/github/fmaussion/cleo?branch=master
 
 Cleo is a `cat <https://drive.google.com/file/d/0B-0AsTwFw61uRnZZY1l4cjU2b3M
-/view?usp=sharing>`_. Cleo is also a small library to plot some maps
-of georeferenced data.
+/view?usp=sharing>`_. Cleo is also a small library to visualize georeferenced
+data.
 
 
 Installation
