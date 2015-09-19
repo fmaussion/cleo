@@ -20,7 +20,7 @@ Installation
 ------------
 
 Cleo builds upon the companion project `Salem <https://github
-.com/fmaussion/salem>`_ and has the same dependencies.
+.com/fmaussion/salem>`_ and has the same dependencies, plus Pillow.
 
 After installing the required packages, a simple `pip install` should be
 enough::
