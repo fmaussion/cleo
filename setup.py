@@ -4,7 +4,7 @@
 
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 from codecs import open  # To use a consistent encoding
-from os import path
+from os import path, walk
 import importlib
 
 # Get the long description from the relevant file
@@ -27,6 +27,18 @@ def check_dependencies(package_names):
 req_packages = ['salem']
 
 check_dependencies(req_packages)
+
+
+def file_walk(top, remove=''):
+    """
+    Returns a generator of files from the top of the tree, removing
+    the given prefix from the root/file result.
+    """
+    top = top.replace('/', path.sep)
+    remove = remove.replace('/', path.sep)
+    for root, dirs, files in walk(top):
+        for file in files:
+            yield path.join(root, file).replace(remove, '')
 
 
 setup(
@@ -67,11 +79,10 @@ setup(
     # List additional groups of dependencies here (e.g. development dependencies).
     extras_require={},
     # data files that need to be installed
-    package_data={'cleo.files': ['*'],
-                  'cleo.tests.baseline_images': ['*']
-                  },
-    # Old
-    data_files=[],
+    package_data={'cleo.tests': list(file_walk('cleo/tests/baseline_images',
+                                               remove='cleo/tests/')),
+                  'cleo': list(file_walk('cleo/files', remove='cleo/'))},
+    # data_files=[],
     # Executable scripts
     entry_points={},
 )
