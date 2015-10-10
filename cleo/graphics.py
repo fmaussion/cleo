@@ -628,7 +628,6 @@ class Map(DataLevels):
 
         # Geometries
         for g, kwargs in self._geometries:
-            print(g, kwargs)
             if g.type == 'Polygon':
                 kwargs.setdefault('facecolor', 'none')
                 plot_polygon(ax, g.buffer(0), **kwargs)
