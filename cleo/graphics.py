@@ -6,6 +6,7 @@ License: GPLv3+
 """
 from __future__ import division, absolute_import, unicode_literals
 import six
+from six import string_types
 # Builtins
 import copy
 import os
@@ -305,6 +306,43 @@ class Map(DataLevels):
 
         self._shading_base()
 
+    def _check_data(self, data=None, crs=None, interp='nearest',
+                    overplot=False):
+        """Interpolates the data to the map grid."""
+
+        data = np.ma.fix_invalid(np.squeeze(data))
+        shp = data.shape
+        if len(shp) != 2:
+            raise ValueError('Data should be 2D.')
+
+        crs = salem.gis.check_crs(crs)
+        if crs is None:
+            # Reform case, but with a sanity check
+            if not np.isclose(shp[0] / shp[1], self.grid.ny / self.grid.nx,
+                              atol=1e-2):
+                raise ValueError('Dimensions of data do not match the map.')
+
+            # need to resize if not same
+            if not ((shp[0] == self.grid.ny) and (shp[1] == self.grid.nx)):
+                if interp.lower() == 'linear':
+                    interp = 'bilinear'
+                if interp.lower() == 'spline':
+                    interp = 'cubic'
+                # TODO: this does not work well with masked arrays
+                data = imresize(data.filled(np.NaN),
+                                (self.grid.ny, self.grid.nx),
+                                interp=interp, mode='F')
+        elif isinstance(crs, salem.Grid):
+            # Remap
+            if overplot:
+                data = self.grid.map_gridded_data(data, crs, interp=interp,
+                                                  out=self.data)
+            else:
+                data = self.grid.map_gridded_data(data, crs, interp=interp)
+        else:
+            raise ValueError('crs not understood')
+        return data
+
     def set_data(self, data=None, crs=None, interp='nearest',
                  overplot=False):
         """Adds data to the plot. The data has to be georeferenced, i.e. by
@@ -324,31 +362,8 @@ class Map(DataLevels):
         if data is None:
             self.data = np.ma.zeros((self.grid.ny, self.grid.nx))
             return
-        data = np.ma.fix_invalid(np.squeeze(data))
-        shp = data.shape
-        if len(shp) != 2:
-            raise ValueError('Data should be 2D.')
-
-        crs = salem.gis.check_crs(crs)
-        if crs is None:
-            # Reform case, but with a sanity check
-            if not np.isclose(shp[0] / shp[1], self.grid.ny / self.grid.nx,
-                              atol=1e-2):
-                raise ValueError('Dimensions of data do not match the map.')
-            if interp.lower() == 'linear':
-                interp = 'bilinear'
-            # TODO: this does not work well with masked arrays
-            data = imresize(data.filled(np.NaN), (self.grid.ny, self.grid.nx),
-                            interp=interp, mode='F')
-        elif isinstance(crs, salem.Grid):
-            # Remap
-            if overplot:
-                data = self.grid.map_gridded_data(data, crs, interp=interp,
-                                                  out=self.data)
-            else:
-                data = self.grid.map_gridded_data(data, crs, interp=interp)
-        else:
-            raise ValueError('crs not understood')
+        data = self._check_data(data=data, crs=crs, interp=interp,
+                                overplot=overplot)
         DataLevels.set_data(self, data)
 
     def set_geometry(self, geometry=None, crs=salem.wgs84, **kwargs):
@@ -542,12 +557,13 @@ class Map(DataLevels):
         self.relief_factor = relief_factor
         self.slope = slope
 
-    def set_topography(self, geotiff=None, relief_factor=0.7, **kwargs):
+    def set_topography(self, topo=None, crs=None, relief_factor=0.7, **kwargs):
         """Add topographical shading to the map.
 
         Parameters
         ----------
-        geotiff: path to a geotiff file containing the topography
+        topo: path to a geotiff file containing the topography, OR
+              2d data array
         relief_factor: how strong should the shading be?
         kwargs: any keyword accepted by salem.Grid.map_gridded_data (interp,ks)
 
@@ -556,29 +572,38 @@ class Map(DataLevels):
         the topography if needed (bonus)
         """
 
-        if geotiff is None:
+        if topo is None:
             self._shading_base()
-        _, ext = os.path.splitext(geotiff)
-        if ext.lower() == '.tif':
-            g = salem.datasets.GeoTiff(geotiff)
-            # Spare memory
-            ex = self.grid.extent_in_crs(crs=wgs84)  # left, right, bot, top
-            g.set_subset(corners=((ex[0], ex[2]), (ex[1], ex[3])),
-                         crs=wgs84, margin=10)
-            z = g.get_vardata()
-            z[z < -999] = 0
-            kwargs.setdefault('interp', 'spline')
-            z = self.grid.map_gridded_data(z, g.grid, **kwargs)
+        kwargs.setdefault('interp', 'spline')
+
+        if isinstance(topo, string_types):
+            _, ext = os.path.splitext(topo)
+            if ext.lower() == '.tif':
+                g = salem.datasets.GeoTiff(topo)
+                # Spare memory
+                ex = self.grid.extent_in_crs(crs=wgs84)  # l, r, b, t
+                g.set_subset(corners=((ex[0], ex[2]), (ex[1], ex[3])),
+                             crs=wgs84, margin=10)
+                z = g.get_vardata()
+                z[z < -999] = 0
+                z = self.grid.map_gridded_data(z, g.grid, **kwargs)
+            else:
+                raise ValueError('File extension not recognised: {}'
+                                 .format(ext))
         else:
-            raise ValueError('File extension not recognised: {}'.format(ext))
+            z = self._check_data(topo, crs=crs, **kwargs)
 
         dy, dx = np.gradient(z, self.grid.dy, self.grid.dx)
         self._shading_base(dx - dy, relief_factor=relief_factor)
         return z
 
-    def set_rgb(self, img=None):
+    def set_rgb(self, img=None, crs=None):
         """Manually force to a rgb img"""
         # TODO: documentation
+        if isinstance(crs, salem.Grid):
+            img = np.swapaxes(np.swapaxes(img, 1, 2), 0, 1)
+            img = self.grid.map_gridded_data(img, crs)
+            img = np.swapaxes(np.swapaxes(img, 0, 1), 1, 2)
 
         self._rgb = img
 

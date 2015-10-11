@@ -1,6 +1,6 @@
 from __future__ import division
 
-from nose.tools import assert_true
+from nose.tools import assert_true, assert_raises
 
 import os
 import copy
@@ -23,7 +23,7 @@ import salem
 from salem import Grid
 from salem import wgs84
 from salem.utils import get_demo_file
-from salem.datasets import GeoNetcdf, GoogleCenterMap
+from salem.datasets import GeoNetcdf, GoogleCenterMap, GoogleVisibleMap
 
 # Globals
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -279,7 +279,8 @@ def test_geometries():
 
 
 @image_comparison(baseline_images=['test_hef_1','test_hef_2','test_hef_3',
-                                   'test_hef_5', 'test_hef_topo'],
+                                   'test_hef_5', 'test_hef_array',
+                                   'test_hef_topo'],
                   extensions=['png'])
 def test_hef():
 
@@ -302,12 +303,17 @@ def test_hef():
                      interp='spline', ks=5)
     c.visualize(addcbar=False, title='spline deg 5')
 
+    dem = salem.GeoTiff(get_demo_file('hef_srtm.tif'))
+    mytopo = dem.get_vardata()
+    c.set_topography(mytopo, crs=dem.grid, interp='spline')
+    c.visualize(addcbar=False, title='From array')
+
     c.set_cmap(cleo.get_cm('topo'))
     c.set_plot_params(nlevels=256)
     c.set_data(h)
     c.visualize()
 
-@image_comparison(baseline_images=['test_googlemap'],
+@image_comparison(baseline_images=['test_googlemap', 'test_googlegrid'],
                   extensions=['png'])
 def test_gmap():
 
@@ -319,6 +325,26 @@ def test_gmap():
     m.set_shapefile(get_demo_file('Hintereisferner.shp'),
                     linewidths=2, edgecolor='darkred')
     m.set_rgb(g.get_vardata())
+    m.visualize(addcbar=False)
+
+    dem = salem.GeoTiff(get_demo_file('hef_srtm.tif'))
+    dem.set_subset(margin=-100)
+
+    dem = salem.grids.local_mercator_grid(center_ll=(10.76, 46.798444),
+                                               extent=(10000, 7000))
+
+    i, j = dem.ij_coordinates
+    g = GoogleVisibleMap(x=i, y=j, src=dem, size_x=500, size_y=400)
+    img = g.get_vardata()
+
+    m = Map(dem, countries=False)
+
+    assert_raises(ValueError, m.set_data, img)
+
+    m.set_lonlat_countours(interval=0.025)
+    m.set_shapefile(get_demo_file('Hintereisferner.shp'),
+                    linewidths=2, edgecolor='darkred')
+    m.set_rgb(img, g.grid)
     m.visualize(addcbar=False)
 
 
