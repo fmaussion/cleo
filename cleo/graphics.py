@@ -306,6 +306,8 @@ class Map(DataLevels):
 
         self._shading_base()
 
+        self._rgb = None
+
     def _check_data(self, data=None, crs=None, interp='nearest',
                     overplot=False):
         """Interpolates the data to the map grid."""
@@ -501,9 +503,6 @@ class Map(DataLevels):
         d = np.array(['4', '3', '2', '1', '0'])
         d = d[interval < np.array([0.001, 0.01, 0.1, 1, 10000])][0]
 
-        # MAnual RGB
-        self._rgb = None
-
         # The labels (quite ugly)
         self.xtick_pos = []
         self.xtick_val = []
@@ -599,13 +598,19 @@ class Map(DataLevels):
 
     def set_rgb(self, img=None, crs=None):
         """Manually force to a rgb img"""
-        # TODO: documentation
-        if isinstance(crs, salem.Grid):
-            img = np.swapaxes(np.swapaxes(img, 1, 2), 0, 1)
-            img = self.grid.map_gridded_data(img, crs)
-            img = np.swapaxes(np.swapaxes(img, 0, 1), 1, 2)
 
-        self._rgb = img
+        if (len(img.shape) != 3) or (img.shape[-1] != 3):
+            raise ValueError('img should be of shape (x, y, 3)')
+
+        # Unefficient but by far easiest right now
+        out = []
+        for i in [0, 1, 2]:
+            out.append(self._check_data(img[..., i], crs=crs))
+        self._rgb = np.dstack(out)
+        # if isinstance(crs, salem.Grid):
+        #     img = np.swapaxes(np.swapaxes(img, 1, 2), 0, 1)
+        #     img = self.grid.map_gridded_data(img, crs)
+        #     img = np.swapaxes(np.swapaxes(img, 0, 1), 1, 2)
 
     def to_rgb(self):
         """Transform the data to a RGB image and add topographical shading."""

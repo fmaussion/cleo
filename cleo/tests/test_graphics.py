@@ -14,6 +14,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib as mpl
 import shapely.geometry as shpg
 import geopandas as gpd
+import nose
 
 from cleo import DataLevels
 from cleo import Map
@@ -347,10 +348,18 @@ def test_gmap():
     m.set_rgb(img, g.grid)
     m.visualize(addcbar=False)
 
+@image_comparison(baseline_images=['test_googlemap_llconts'],
+                  extensions=['png'])
+def test_gmap_llconts():
+
+    # This was because some problems were left unnoticed by other tests
+    g = salem.GoogleCenterMap(center_ll=(11.38, 47.26), zoom=9)
+    m = cleo.Map(g.grid)
+    m.set_rgb(g.get_vardata())
+    m.set_lonlat_countours(interval=0.2)
+    m.visualize(addcbar=False)
+
 
 if __name__ == '__main__':
-    import nose
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=UserWarning,
-                                message=r'.*guessing baseline image.*')
-        nose.runmodule(argv=['-s', '-v', '--with-doctest'], exit=False)
+    warnings.filterwarnings("ignore")
+    nose.runmodule(argv=['-s', '-v', '--with-doctest'], exit=False)
