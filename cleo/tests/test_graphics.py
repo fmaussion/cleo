@@ -288,6 +288,7 @@ def test_hef():
     grid = salem.grids.local_mercator_grid(center_ll=(10.76, 46.798444),
                                                extent=(10000, 7000))
     c = Map(grid, countries=False)
+    c.set_lonlat_countours(interval=10)
     c.set_shapefile(get_demo_file('Hintereisferner_UTM.shp'))
     c.set_topography(get_demo_file('hef_srtm.tif'),
                      interp='linear')
@@ -309,6 +310,7 @@ def test_hef():
     c.set_topography(mytopo, crs=dem.grid, interp='spline')
     c.visualize(addcbar=False, title='From array')
 
+    c.set_lonlat_countours()
     c.set_cmap(cleo.get_cm('topo'))
     c.set_plot_params(nlevels=256)
     c.set_data(h)

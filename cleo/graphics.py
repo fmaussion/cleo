@@ -469,7 +469,25 @@ class Map(DataLevels):
         else:
             raise NotImplementedError(geomtype)
 
-    def set_lonlat_countours(self, interval=10, xinterval=None,
+    def _find_interval(self):
+        """Quick n dirty function to find a suitable lonlat interval."""
+        candidates = [0.001, 0.002, 0.005,
+                      0.01, 0.02, 0.05,
+                      0.1, 0.2, 0.5,
+                      1, 2, 5, 10, 20]
+        xx, yy = self.grid.pixcorner_ll_coordinates
+        for inter in candidates:
+            _xx = xx / inter
+            _yy = yy / inter
+            mm_x = [np.ceil(np.min(_xx)), np.floor(np.max(_xx))]
+            mm_y = [np.ceil(np.min(_yy)), np.floor(np.max(_yy))]
+            nx = mm_x[1]-mm_x[0]+1
+            ny = mm_y[1]-mm_y[0]+1
+            if np.max([nx, ny]) <= 8:
+                break
+        return inter
+
+    def set_lonlat_countours(self, interval=None, xinterval=None,
                              yinterval=None, add_tick_labels=True,
                              **kwargs):
         """Add longitude and latitude contours to the map.
@@ -485,6 +503,8 @@ class Map(DataLevels):
         """
 
         # Defaults
+        if interval is None:
+            interval = self._find_interval()
         if xinterval is None:
             xinterval = interval
         if yinterval is None:
