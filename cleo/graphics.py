@@ -396,7 +396,7 @@ class Map(DataLevels):
 
         # Save
         if 'Multi' in geom.type:
-            for g in geometry:
+            for g in geom:
                 self._geometries.append((g, kwargs))
         else:
             self._geometries.append((geom, kwargs))
@@ -612,7 +612,16 @@ class Map(DataLevels):
         else:
             z = self._check_data(topo, crs=crs, **kwargs)
 
-        dy, dx = np.gradient(z, self.grid.dy, self.grid.dx)
+        # Gradient in m m-1
+        ddx = self.grid.dx
+        ddy = self.grid.dy
+        if self.grid.proj.is_latlong():
+            # we make a coarse approx of the avg dx on a sphere
+            _, lat = self.grid.ll_coordinates
+            ddx = np.mean(ddx * 111200 * np.cos(lat * np.pi / 180))
+            ddy *= 111200
+
+        dy, dx = np.gradient(z, ddy, ddx)
         self._shading_base(dx - dy, relief_factor=relief_factor)
         return z
 
@@ -627,10 +636,6 @@ class Map(DataLevels):
         for i in [0, 1, 2]:
             out.append(self._check_data(img[..., i], crs=crs))
         self._rgb = np.dstack(out)
-        # if isinstance(crs, salem.Grid):
-        #     img = np.swapaxes(np.swapaxes(img, 1, 2), 0, 1)
-        #     img = self.grid.map_gridded_data(img, crs)
-        #     img = np.swapaxes(np.swapaxes(img, 0, 1), 1, 2)
 
     def to_rgb(self):
         """Transform the data to a RGB image and add topographical shading."""
@@ -688,13 +693,17 @@ class Map(DataLevels):
             if g.type == 'Point':
                 kwargs.setdefault('marker', 'o')
                 kwargs.setdefault('s', 60)
-                kwargs.setdefault('c', 'w')
+                kwargs.setdefault('facecolor', 'w')
                 kwargs.setdefault('edgecolor', 'k')
                 kwargs.setdefault('linewidths', 1)
                 if 'markersize' in kwargs:
                     # For those tempted to use the whole kw
                     kwargs['s'] = kwargs['markersize']
                     del kwargs['markersize']
+                if 'color' in kwargs:
+                    # For those tempted to use the whole kw
+                    kwargs['c'] = kwargs['color']
+                    del kwargs['color']
                 ax.scatter(g.x, g.y, **kwargs)
 
         # Ticks

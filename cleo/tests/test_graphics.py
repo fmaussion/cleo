@@ -1,11 +1,11 @@
 from __future__ import division
 
+import warnings
 from nose.tools import assert_true, assert_raises
 
 import os
 import copy
 import shutil
-import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -135,6 +135,7 @@ def test_datalevels():
 
     plt.tight_layout()
 
+
 @image_comparison(baseline_images=['test_datalevels_visu_h',
                                    'test_datalevels_visu_v'],
                   extensions=['png'])
@@ -148,6 +149,7 @@ def test_datalevels_visu():
 
     dl = DataLevels(a.reshape((5,1)), cmap=cm, levels=[0, 1, 2, 3])
     dl.visualize(orientation='vertical', add_values=True)
+
 
 @image_comparison(baseline_images=['test_simple_map'],
                   extensions=['png'])
@@ -235,6 +237,7 @@ def test_merca_map():
     m2.visualize(ax=ax2, addcbar=False)
     plt.tight_layout()
 
+
 @image_comparison(baseline_images=['test_oceans'],
                   extensions=['png'])
 def test_oceans():
@@ -273,6 +276,15 @@ def test_geometries():
     s += 20
     p = shpg.Polygon(shpg.LineString(s), [shpg.LineString(s/4 + 10)])
     c.set_geometry(p, facecolor='red', edgecolor='k', linewidth=3, alpha=0.5)
+
+    p1 = shpg.Point(20, 10)
+    p2 = shpg.Point(20, 20)
+    p3 = shpg.Point(10, 20)
+    mpoints = shpg.MultiPoint([p1, p2, p3])
+    c.set_geometry(mpoints, s=250, marker='s',
+                   c='purple', hatch='||||')
+
+
     c.visualize(addcbar=False)
 
     c.set_geometry()
@@ -316,6 +328,7 @@ def test_hef():
     c.set_data(h)
     c.visualize()
 
+
 @image_comparison(baseline_images=['test_googlemap', 'test_googlegrid'],
                   extensions=['png'])
 def test_gmap():
@@ -350,6 +363,7 @@ def test_gmap():
     m.set_rgb(img, g.grid)
     m.visualize(addcbar=False)
 
+
 @image_comparison(baseline_images=['test_googlemap_llconts'],
                   extensions=['png'])
 def test_gmap_llconts():
@@ -363,5 +377,6 @@ def test_gmap_llconts():
 
 
 if __name__ == '__main__':
-    warnings.filterwarnings("ignore")
-    nose.runmodule(argv=['-s', '-v', '--with-doctest'], exit=False)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        nose.runmodule(argv=['-s', '-v', '--with-doctest'], exit=False)
