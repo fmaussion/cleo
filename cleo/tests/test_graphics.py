@@ -18,6 +18,7 @@ import nose
 
 from cleo import DataLevels
 from cleo import Map
+from cleo import files
 import cleo
 
 import salem
@@ -286,6 +287,50 @@ def test_geometries():
 
 
     c.visualize(addcbar=False)
+
+    c.set_geometry()
+    assert_true(len(c._geometries) == 0)
+
+
+@image_comparison(baseline_images=['test_text'], tol=8,
+                  extensions=['png'])
+def test_text():
+
+    # UL Corner
+    g = Grid(nxny=(5, 4), dxdy=(10, 10), ll_corner=(-20, -15), proj=wgs84,
+             pixel_ref='corner')
+    c = Map(g, ny=4, countries=False)
+    c.set_lonlat_countours(interval=5., colors='crimson')
+
+    c.set_text(-5, -5, 'Less Middle', color='green', style='italic', size=25)
+    c.set_geometry(shpg.Point(-10, -10), s=500, marker='o',
+                   text='My point')
+
+    shape = salem.utils.read_shapefile_to_grid(files['world_borders'], c.grid)
+    had_c = set()
+    for index, row in shape.iloc[::-1].iterrows():
+        if row.CNTRY_NAME in had_c:
+            c.set_geometry(row.geometry, crs=c.grid)
+        else:
+            c.set_geometry(row.geometry, text=row.CNTRY_NAME, crs=c.grid,
+                           text_kwargs=dict(horizontalalignment='center',
+                           verticalalignment='center', clip_on=True,
+                                            color='gray'))
+        had_c.add(row.CNTRY_NAME)
+
+    p1 = shpg.Point(20, 10)
+    p2 = shpg.Point(20, 20)
+    p3 = shpg.Point(10, 20)
+    mpoints = shpg.MultiPoint([p1, p2, p3])
+    c.set_geometry(mpoints, s=250, marker='s',
+                   c='purple', hatch='||||', text='baaaaad',
+                   text_kwargs=dict(horizontalalignment='center',
+                                    verticalalignment='center', color='red'))
+
+    c.visualize(addcbar=False)
+
+    c.set_text()
+    assert_true(len(c._text) == 0)
 
     c.set_geometry()
     assert_true(len(c._geometries) == 0)

@@ -300,12 +300,10 @@ class Map(DataLevels):
 
         self._collections = []
         self._geometries = []
+        self._text = []
         self.set_shapefile(countries=countries)
-
         self.set_lonlat_countours()
-
         self._shading_base()
-
         self._rgb = None
 
     def _check_data(self, data=None, crs=None, interp='nearest',
@@ -368,7 +366,8 @@ class Map(DataLevels):
                                 overplot=overplot)
         DataLevels.set_data(self, data)
 
-    def set_geometry(self, geometry=None, crs=salem.wgs84, **kwargs):
+    def set_geometry(self, geometry=None, crs=salem.wgs84, text=None,
+                     text_kwargs=dict(), **kwargs):
         """Adds any Shapely geometry to the map (including polygons,
         points, etc.) If called without arguments, it removes all previous
         geometries.
@@ -377,6 +376,9 @@ class Map(DataLevels):
         ----------
         geometry: a Shapely gometry object (must be a scalar!)
         crs: the associated coordinate reference system (default wgs84)
+        text: if you want to add a text to the geometry (it's position is
+        based on the geometry's centroid)
+        text_kwargs: the keyword arguments to pass to the test() function
         kwargs: any keyword associated with the geometrie's plotting function::
             - Point: all keywords accepted by scatter(): marker, s, edgecolor,
              facecolor...
@@ -394,12 +396,33 @@ class Map(DataLevels):
         geom = salem.gis.transform_geometry(geometry, crs=crs,
                                             to_crs=self.grid.center_grid)
 
+        # Text
+        if text is not None:
+            x, y = geom.centroid.xy
+            self.set_text(x[0], y[0], text, crs=self.grid.center_grid,
+                          **text_kwargs)
+
         # Save
         if 'Multi' in geom.type:
             for g in geom:
                 self._geometries.append((g, kwargs))
         else:
             self._geometries.append((geom, kwargs))
+
+    def set_text(self, x=None, y=None, text='', crs=salem.wgs84, **kwargs):
+        """Add a text to the map.
+
+        Keyword arguments will be passed to mpl's text() function.
+        """
+
+        # Reset?
+        if x is None:
+            self._text = []
+            return
+
+        # Transform
+        x, y = self.grid.center_grid.transform(x, y, crs=crs)
+        self._text.append((x, y, text, kwargs))
 
     def set_shapefile(self, shape=None, countries=False, oceans=False,
                       rivers=False, **kwargs):
@@ -702,9 +725,18 @@ class Map(DataLevels):
                     del kwargs['markersize']
                 if 'color' in kwargs:
                     # For those tempted to use the whole kw
-                    kwargs['c'] = kwargs['color']
-                    del kwargs['color']
+                    kwargs['facecolor'] = kwargs['color']
+                    kwargs['edgecolor'] = kwargs['color']
+                if 'c' in kwargs:
+                    # For those tempted to use the whole kw
+                    kwargs['facecolor'] = kwargs['c']
+                    kwargs['edgecolor'] = kwargs['c']
+                    del kwargs['c']
                 ax.scatter(g.x, g.y, **kwargs)
+
+        # Texts
+        for x, y, s, kwargs in self._text:
+            ax.text(x, y, s, **kwargs)
 
         # Ticks
         if (len(self.xtick_pos) > 0) or (len(self.ytick_pos) > 0):
