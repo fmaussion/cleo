@@ -120,6 +120,8 @@ class DataLevels(object):
         else:
             if nlevels is None:
                 nlevels = 8
+            if self.vmax == self.vmin:
+                return np.linspace(self.vmin, self.vmax+1, nlevels)
             return np.linspace(self.vmin, self.vmax, nlevels)
 
     @property
@@ -241,6 +243,7 @@ class DataLevels(object):
         self.plot(ax)
 
         # Colorbar
+        addcbar = self.vmin != self.vmax
         if addcbar:
             if orientation == 'horizontal':
                 self.append_colorbar(ax, "top", size=0.2, pad=0.5)
@@ -367,7 +370,7 @@ class Map(DataLevels):
         DataLevels.set_data(self, data)
 
     def set_geometry(self, geometry=None, crs=salem.wgs84, text=None,
-                     text_kwargs=dict(), **kwargs):
+                     text_delta=(0.01, 0.01), text_kwargs=dict(), **kwargs):
         """Adds any Shapely geometry to the map (including polygons,
         points, etc.) If called without arguments, it removes all previous
         geometries.
@@ -378,6 +381,8 @@ class Map(DataLevels):
         crs: the associated coordinate reference system (default wgs84)
         text: if you want to add a text to the geometry (it's position is
         based on the geometry's centroid)
+        text_delta: it can be useful to shift the text of a certain amount
+        when annotating points. units are percentage of data coordinates.
         text_kwargs: the keyword arguments to pass to the test() function
         kwargs: any keyword associated with the geometrie's plotting function::
             - Point: all keywords accepted by scatter(): marker, s, edgecolor,
@@ -399,7 +404,10 @@ class Map(DataLevels):
         # Text
         if text is not None:
             x, y = geom.centroid.xy
-            self.set_text(x[0], y[0], text, crs=self.grid.center_grid,
+            x = x[0] + text_delta[0] * self.grid.nx
+            sign = self.grid.dy / np.abs(self.grid.dy)
+            y = y[0] + text_delta[1] * self.grid.ny * sign
+            self.set_text(x, y, text, crs=self.grid.center_grid,
                           **text_kwargs)
 
         # Save

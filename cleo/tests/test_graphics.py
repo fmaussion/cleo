@@ -304,7 +304,7 @@ def test_text():
 
     c.set_text(-5, -5, 'Less Middle', color='green', style='italic', size=25)
     c.set_geometry(shpg.Point(-10, -10), s=500, marker='o',
-                   text='My point')
+                   text='My point', text_delta=[0, 0])
 
     shape = salem.utils.read_shapefile_to_grid(files['world_borders'], c.grid)
     had_c = set()
@@ -315,7 +315,7 @@ def test_text():
             c.set_geometry(row.geometry, text=row.CNTRY_NAME, crs=c.grid,
                            text_kwargs=dict(horizontalalignment='center',
                            verticalalignment='center', clip_on=True,
-                                            color='gray'))
+                                            color='gray'), text_delta=[0, 0])
         had_c.add(row.CNTRY_NAME)
 
     p1 = shpg.Point(20, 10)
@@ -323,7 +323,7 @@ def test_text():
     p3 = shpg.Point(10, 20)
     mpoints = shpg.MultiPoint([p1, p2, p3])
     c.set_geometry(mpoints, s=250, marker='s',
-                   c='purple', hatch='||||', text='baaaaad',
+                   c='purple', hatch='||||', text='baaaaad', text_delta=[0, 0],
                    text_kwargs=dict(horizontalalignment='center',
                                     verticalalignment='center', color='red'))
 
@@ -360,7 +360,8 @@ def test_hef():
 
     h = c.set_topography(get_demo_file('hef_srtm.tif'),
                      interp='spline', ks=5)
-    c.visualize(addcbar=False, title='spline deg 5')
+    # This test is important, I removed the add_dcbar
+    c.visualize(title='spline deg 5')
 
     dem = salem.GeoTiff(get_demo_file('hef_srtm.tif'))
     mytopo = dem.get_vardata()
