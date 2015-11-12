@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from shapely.geometry import MultiPoint
 from descartes.patch import PolygonPatch
 from matplotlib.collections import PatchCollection, LineCollection
 import salem
@@ -414,8 +415,16 @@ class Map(DataLevels):
         if 'Multi' in geom.type:
             for g in geom:
                 self._geometries.append((g, kwargs))
+                # dirty solution: I should use collections instead
+                if 'label' in kwargs:
+                    kwargs = kwargs.copy()
+                    del kwargs['label']
         else:
             self._geometries.append((geom, kwargs))
+
+    def set_points(self, x, y, **kwargs):
+        """Shortcut for set_geometry() accepting coordinates as input."""
+        self.set_geometry(MultiPoint(np.array([x, y]).T), **kwargs)
 
     def set_text(self, x=None, y=None, text='', crs=salem.wgs84, **kwargs):
         """Add a text to the map.

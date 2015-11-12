@@ -318,11 +318,7 @@ def test_text():
                                             color='gray'), text_delta=[0, 0])
         had_c.add(row.CNTRY_NAME)
 
-    p1 = shpg.Point(20, 10)
-    p2 = shpg.Point(20, 20)
-    p3 = shpg.Point(10, 20)
-    mpoints = shpg.MultiPoint([p1, p2, p3])
-    c.set_geometry(mpoints, s=250, marker='s',
+    c.set_points([20, 20, 10], [10, 20, 20], s=250, marker='s',
                    c='purple', hatch='||||', text='baaaaad', text_delta=[0, 0],
                    text_kwargs=dict(horizontalalignment='center',
                                     verticalalignment='center', color='red'))
