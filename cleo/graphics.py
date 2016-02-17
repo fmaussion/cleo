@@ -725,7 +725,7 @@ class Map(DataLevels):
         for g, kwargs in self._geometries:
             if g.type == 'Polygon':
                 kwargs.setdefault('facecolor', 'none')
-                plot_polygon(ax, g.buffer(0), **kwargs)
+                plot_polygon(ax, g, **kwargs)  # was g.buffer(0). Why?
             if g.type in ['LineString', 'LinearRing']:
                 a = np.array(g)
                 kwargs.setdefault('color', 'k')
