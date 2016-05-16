@@ -22,7 +22,8 @@ def check_dependencies(package_names):
         except ImportError:
             not_met.append(n)
     if len(not_met) != 0:
-        raise ImportError("Following packages could not be found: " + ', '.join(not_met))
+        errmsg = "Warning: the following packages could not be found: "
+        print(errmsg + ', '.join(not_met))
 
 req_packages = ['salem']
 
