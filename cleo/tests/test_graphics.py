@@ -181,7 +181,7 @@ def test_simple_map():
         c.set_plot_params(levels=[0, 1, 2, 3])
         c.set_data(data)
         c.set_shapefile(fs)
-        c.set_lonlat_countours(interval=0.5)
+        c.set_lonlat_contours(interval=0.5)
 
     fig = plt.figure(figsize=(9, 8))
     ax1 = fig.add_subplot(321)
@@ -198,7 +198,7 @@ def test_simple_map():
         c.set_data(data, crs=g)
         c.set_shapefile(fs)
         c.set_plot_params(nlevels=256)
-        c.set_lonlat_countours(interval=2)
+        c.set_lonlat_contours(interval=2)
     ax1 = fig.add_subplot(323)
     ax2 = fig.add_subplot(324)
     c1.visualize(ax1)
@@ -207,7 +207,7 @@ def test_simple_map():
     # Settings
     for c, data in zip([c1, c2], [a_inv, a]):
         c.set_plot_params(nlevels=256, vmax=3)
-        c.set_lonlat_countours(interval=1)
+        c.set_lonlat_contours(interval=1)
         c.set_data(data, interp='linear')
     ax1 = fig.add_subplot(325)
     ax2 = fig.add_subplot(326)
@@ -219,7 +219,39 @@ def test_simple_map():
         shutil.rmtree(testdir)
 
 
-@image_comparison(baseline_images=['test_merca_map'],
+@image_comparison(baseline_images=['test_contourf', 'test_contourf_gone'],
+                  extensions=['png'])
+def test_contourf():
+
+    a = np.zeros((4, 5))
+    a[0, 0] = -1
+    a[1, 1] = 1.1
+    a[2, 2] = 2.2
+    a[2, 4] = 1.9
+    a[3, 3] = 9
+
+    s = a * 0.
+    s[2, 2] = 1
+
+    # UL Corner
+    g = Grid(nxny=(5, 4), dxdy=(1, -1), ul_corner=(-1, 3), proj=wgs84,
+             pixel_ref='corner')
+    c = Map(g, ny=400, countries=False)
+
+    c.set_cmap(mpl.cm.get_cmap('viridis'))
+    c.set_plot_params(levels=[0, 1, 2, 3])
+    c.set_data(a)
+    c.set_contourf(s, interp='linear', hatches=['xxx'], colors='none',
+                   levels=[0.5, 1.5])
+    c.set_lonlat_contours(interval=0.5)
+    c.visualize()
+
+    # remove it
+    c.set_contourf()
+    c.visualize()
+
+
+@image_comparison(baseline_images=['test_merca_map', 'test_merca_nolabels'],
                   extensions=['png'])
 def test_merca_map():
 
@@ -237,6 +269,9 @@ def test_merca_map():
     m1.visualize(ax=ax1, addcbar=False)
     m2.visualize(ax=ax2, addcbar=False)
     plt.tight_layout()
+
+    m1.set_lonlat_contours(add_tick_labels=False)
+    m1.visualize()
 
 
 @image_comparison(baseline_images=['test_oceans'],
@@ -262,7 +297,7 @@ def test_geometries():
     g = Grid(nxny=(5, 4), dxdy=(10, 10), ll_corner=(-20, -15), proj=wgs84,
              pixel_ref='corner')
     c = Map(g, ny=4)
-    c.set_lonlat_countours(interval=10., colors='crimson')
+    c.set_lonlat_contours(interval=10., colors='crimson')
 
     c.set_geometry(shpg.Point(10, 10), color='darkred', markersize=60)
     c.set_geometry(shpg.Point(5, 5), s=500, marker='s',
@@ -300,7 +335,7 @@ def test_text():
     g = Grid(nxny=(5, 4), dxdy=(10, 10), ll_corner=(-20, -15), proj=wgs84,
              pixel_ref='corner')
     c = Map(g, ny=4, countries=False)
-    c.set_lonlat_countours(interval=5., colors='crimson')
+    c.set_lonlat_contours(interval=5., colors='crimson')
 
     c.set_text(-5, -5, 'Less Middle', color='green', style='italic', size=25)
     c.set_geometry(shpg.Point(-10, -10), s=500, marker='o',
@@ -334,14 +369,14 @@ def test_text():
 
 @image_comparison(baseline_images=['test_hef_1','test_hef_2','test_hef_3',
                                    'test_hef_5', 'test_hef_array',
-                                   'test_hef_topo'],
+                                   'test_hef_topo', 'test_hef_nan'],
                   extensions=['png'])
 def test_hef():
 
     grid = salem.grids.local_mercator_grid(center_ll=(10.76, 46.798444),
                                                extent=(10000, 7000))
     c = Map(grid, countries=False)
-    c.set_lonlat_countours(interval=10)
+    c.set_lonlat_contours(interval=10)
     c.set_shapefile(get_demo_file('Hintereisferner_UTM.shp'))
     c.set_topography(get_demo_file('hef_srtm.tif'),
                      interp='linear')
@@ -355,7 +390,7 @@ def test_hef():
     c.visualize(addcbar=False, title='Default: spline deg 3')
 
     h = c.set_topography(get_demo_file('hef_srtm.tif'),
-                     interp='spline', ks=5)
+                         interp='spline', ks=5)
     # This test is important, I removed the add_dcbar
     c.visualize(title='spline deg 5')
 
@@ -364,11 +399,16 @@ def test_hef():
     c.set_topography(mytopo, crs=dem.grid, interp='spline')
     c.visualize(addcbar=False, title='From array')
 
-    c.set_lonlat_countours()
+    c.set_lonlat_contours()
     c.set_cmap(cleo.get_cm('topo'))
     c.set_plot_params(nlevels=256)
     c.set_data(h)
     c.visualize()
+
+    # Try with nan data
+    h[10:, 10:] = np.NaN
+    c.set_data(h)
+    c.visualize(title='NaN')
 
 
 @image_comparison(baseline_images=['test_googlemap', 'test_googlegrid'],
@@ -379,7 +419,7 @@ def test_gmap():
                         size_x=640, size_y=640)
 
     m = Map(g.grid, countries=False, nx=640)
-    m.set_lonlat_countours(interval=0.025)
+    m.set_lonlat_contours(interval=0.025)
     m.set_shapefile(get_demo_file('Hintereisferner.shp'),
                     linewidths=2, edgecolor='darkred')
     m.set_rgb(g.get_vardata())
@@ -399,7 +439,7 @@ def test_gmap():
 
     assert_raises(ValueError, m.set_data, img)
 
-    m.set_lonlat_countours(interval=0.025)
+    m.set_lonlat_contours(interval=0.025)
     m.set_shapefile(get_demo_file('Hintereisferner.shp'),
                     linewidths=2, edgecolor='darkred')
     m.set_rgb(img, g.grid)
@@ -414,7 +454,7 @@ def test_gmap_llconts():
     g = salem.GoogleCenterMap(center_ll=(11.38, 47.26), zoom=9)
     m = cleo.Map(g.grid)
     m.set_rgb(g.get_vardata())
-    m.set_lonlat_countours(interval=0.2)
+    m.set_lonlat_contours(interval=0.2)
     m.visualize(addcbar=False)
 
 

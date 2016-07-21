@@ -306,9 +306,10 @@ class Map(DataLevels):
         self._geometries = []
         self._text = []
         self.set_shapefile(countries=countries)
-        self.set_lonlat_countours()
+        self.set_lonlat_contours()
         self._shading_base()
         self._rgb = None
+        self._contourf_data = None
 
     def _check_data(self, data=None, crs=None, interp='nearest',
                     overplot=False):
@@ -369,6 +370,27 @@ class Map(DataLevels):
         data = self._check_data(data=data, crs=crs, interp=interp,
                                 overplot=overplot)
         DataLevels.set_data(self, data)
+
+    def set_contourf(self, data=None, crs=None, interp='nearest', **kwargs):
+        """Adds data to contour on the map.
+
+        Parameters
+        ----------
+        mask: bool array (2d)
+        crs: the data coordinate reference system
+        interp: 'nearest' (default) or 'linear', the interpolation algorithm
+        kwargs: anything accepted by contourf
+        """
+
+
+        # Check input
+        if data is None:
+            self._contourf_data = None
+            return
+
+        self._contourf_data = self._check_data(data=data, crs=crs,
+                                               interp=interp)
+        self._contourf_kw = kwargs
 
     def set_geometry(self, geometry=None, crs=salem.wgs84, text=None,
                      text_delta=(0.01, 0.01), text_kwargs=dict(), **kwargs):
@@ -527,9 +549,9 @@ class Map(DataLevels):
                 break
         return inter
 
-    def set_lonlat_countours(self, interval=None, xinterval=None,
-                             yinterval=None, add_tick_labels=True,
-                             **kwargs):
+    def set_lonlat_contours(self, interval=None, xinterval=None,
+                            yinterval=None, add_tick_labels=True,
+                            **kwargs):
         """Add longitude and latitude contours to the map.
 
         Parameters
@@ -595,10 +617,10 @@ class Map(DataLevels):
                     label = 'Eq.'
                 self.ytick_val.append(label)
 
-            # Done
-            kwargs.setdefault('colors', 'gray')
-            kwargs.setdefault('linestyles', 'dashed')
-            self.ll_contour_kw = kwargs
+        # Done
+        kwargs.setdefault('colors', 'gray')
+        kwargs.setdefault('linestyles', 'dashed')
+        self.ll_contour_kw = kwargs
 
     def _shading_base(self, slope=None, relief_factor=0.7):
         """Compute the shading factor out of the slope."""
@@ -687,6 +709,16 @@ class Map(DataLevels):
 
         # Shading
         if self.slope is not None:
+            # remove alphas?
+            try:
+                pno = np.where(toplot[:, :, 3] == 0.)
+                for i in [0, 1, 2]:
+                    toplot[pno[0], pno[1], i] = 1
+                toplot[:, :, 3] = 1
+            except IndexError:
+                pass
+
+            # Actual shading
             level = 1.0 - 0.1 * self.relief_factor
             sens = 1 + 0.7 * self.relief_factor * self.slope
             for i in [0, 1, 2]:
@@ -705,6 +737,10 @@ class Map(DataLevels):
         # Image is the easiest
         ax.imshow(self.to_rgb(), interpolation='none', origin=self.origin)
         ax.autoscale(False)
+
+        # Stippling
+        if self._contourf_data is not None:
+            ax.contourf(self._contourf_data, **self._contourf_kw)
 
         # Shapefiles
         for col in self._collections:
