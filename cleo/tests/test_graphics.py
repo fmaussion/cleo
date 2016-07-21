@@ -219,6 +219,34 @@ def test_simple_map():
         shutil.rmtree(testdir)
 
 
+@image_comparison(baseline_images=['test_contourf'],
+                  extensions=['png'])
+def test_contourf():
+
+    a = np.zeros((4, 5))
+    a[0, 0] = -1
+    a[1, 1] = 1.1
+    a[2, 2] = 2.2
+    a[2, 4] = 1.9
+    a[3, 3] = 9
+
+    s = a * 0.
+    s[2, 2] = 1
+
+    # UL Corner
+    g = Grid(nxny=(5, 4), dxdy=(1, -1), ul_corner=(-1, 3), proj=wgs84,
+             pixel_ref='corner')
+    c = Map(g, ny=400, countries=False)
+
+    c.set_cmap(mpl.cm.get_cmap('viridis'))
+    c.set_plot_params(levels=[0, 1, 2, 3])
+    c.set_data(a)
+    c.set_contourf(s, interp='linear', hatches=['xxx'], colors='none',
+                   levels=[0.5, 1.5])
+    c.set_lonlat_countours(interval=0.5)
+    c.visualize()
+
+
 @image_comparison(baseline_images=['test_merca_map'],
                   extensions=['png'])
 def test_merca_map():
@@ -334,7 +362,7 @@ def test_text():
 
 @image_comparison(baseline_images=['test_hef_1','test_hef_2','test_hef_3',
                                    'test_hef_5', 'test_hef_array',
-                                   'test_hef_topo'],
+                                   'test_hef_topo', 'test_hef_nan'],
                   extensions=['png'])
 def test_hef():
 
@@ -355,7 +383,7 @@ def test_hef():
     c.visualize(addcbar=False, title='Default: spline deg 3')
 
     h = c.set_topography(get_demo_file('hef_srtm.tif'),
-                     interp='spline', ks=5)
+                         interp='spline', ks=5)
     # This test is important, I removed the add_dcbar
     c.visualize(title='spline deg 5')
 
@@ -369,6 +397,11 @@ def test_hef():
     c.set_plot_params(nlevels=256)
     c.set_data(h)
     c.visualize()
+
+    # Try with nan data
+    h[10:, 10:] = np.NaN
+    c.set_data(h)
+    c.visualize(title='NaN')
 
 
 @image_comparison(baseline_images=['test_googlemap', 'test_googlegrid'],
