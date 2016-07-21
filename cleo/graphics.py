@@ -306,7 +306,7 @@ class Map(DataLevels):
         self._geometries = []
         self._text = []
         self.set_shapefile(countries=countries)
-        self.set_lonlat_countours()
+        self.set_lonlat_contours()
         self._shading_base()
         self._rgb = None
         self._contourf_data = None
@@ -549,9 +549,9 @@ class Map(DataLevels):
                 break
         return inter
 
-    def set_lonlat_countours(self, interval=None, xinterval=None,
-                             yinterval=None, add_tick_labels=True,
-                             **kwargs):
+    def set_lonlat_contours(self, interval=None, xinterval=None,
+                            yinterval=None, add_tick_labels=True,
+                            **kwargs):
         """Add longitude and latitude contours to the map.
 
         Parameters
@@ -617,10 +617,10 @@ class Map(DataLevels):
                     label = 'Eq.'
                 self.ytick_val.append(label)
 
-            # Done
-            kwargs.setdefault('colors', 'gray')
-            kwargs.setdefault('linestyles', 'dashed')
-            self.ll_contour_kw = kwargs
+        # Done
+        kwargs.setdefault('colors', 'gray')
+        kwargs.setdefault('linestyles', 'dashed')
+        self.ll_contour_kw = kwargs
 
     def _shading_base(self, slope=None, relief_factor=0.7):
         """Compute the shading factor out of the slope."""
