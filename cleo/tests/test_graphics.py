@@ -219,7 +219,7 @@ def test_simple_map():
         shutil.rmtree(testdir)
 
 
-@image_comparison(baseline_images=['test_contourf'],
+@image_comparison(baseline_images=['test_contourf', 'test_contourf_gone'],
                   extensions=['png'])
 def test_contourf():
 
@@ -244,6 +244,10 @@ def test_contourf():
     c.set_contourf(s, interp='linear', hatches=['xxx'], colors='none',
                    levels=[0.5, 1.5])
     c.set_lonlat_contours(interval=0.5)
+    c.visualize()
+
+    # remove it
+    c.set_contourf()
     c.visualize()
 
 
