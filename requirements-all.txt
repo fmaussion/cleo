@@ -3,6 +3,7 @@ numpy==1.10.1
 scipy==0.16.1
 pyproj
 pandas
+xarray
 matplotlib
 Pillow
 joblib
@@ -10,4 +11,3 @@ netCDF4
 shapely
 geopandas
 rasterio
-xray
