@@ -412,7 +412,7 @@ def test_hef():
 
 
 @image_comparison(baseline_images=['test_googlemap', 'test_googlegrid'],
-                  extensions=['png'], tol=20)
+                  extensions=['png'], tol=40)
 def test_gmap():
 
     g = GoogleCenterMap(center_ll=(10.762660, 46.794221), zoom=13,
@@ -447,7 +447,7 @@ def test_gmap():
 
 
 @image_comparison(baseline_images=['test_googlemap_llconts'],
-                  extensions=['png'])
+                  extensions=['png'], tol=40)
 def test_gmap_llconts():
 
     # This was because some problems were left unnoticed by other tests
