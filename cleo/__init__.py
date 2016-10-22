@@ -9,6 +9,13 @@ Copyright: Fabien Maussion, 2014-2015
 License: GPLv3+
 """
 from __future__ import division
+import warnings
+
+warnings.warn('Cleo is not maintained anymore! The entire project has been '
+              'merged into salem (https://github.com/fmaussion/salem). '
+              'All the functionalities are available with '
+              'from salem import graphics.', DeprecationWarning)
+
 
 from os import path
 

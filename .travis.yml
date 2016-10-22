@@ -38,7 +38,7 @@ install:
   - travis_wait pip wheel -r requirements-all.txt
   - travis_wait pip install -r requirements-all.txt
   - pip install git+https://github.com/fmaussion/motionless.git
-  - pip install git+https://github.com/fmaussion/salem.git
+  - pip install salem==0.0.9
   - pip install coveralls
   - pip install nose
   - pip install -e .
